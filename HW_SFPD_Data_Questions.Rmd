@@ -1,0 +1,141 @@
+---
+title: "Homework on SFPD Data"
+author: "Danning Peng, Daniel Chia"
+date: "4/24/2017"
+output: html_document
+---
+
+This homework requires you to analyze crime data from San Francisco, using exploratory data analysis (EDA). This is a **group** homework.
+
+Q1: Read in the data using the **fread()** function in R. How many rows and columns of data do you have? The file is "SFPD_Incidents_from_January_2003.csv".
+```{r}
+library(data.table)
+crime_data = fread("~/Downloads/SFPD_Incidents_from_January_2003.csv")
+print(dim(crime_data))
+```
+
+Q2: How many different types of crime categories are there? Print them out.
+```{r}
+print(unique(crime_data$Category))
+```
+
+Q3: Plot the total incidence of crime over time by year using the **ggplot** package. Label the axes properly and make sure the plot is complete and looks good.
+```{r fig.width=10,fig.height=4}
+year1 <- crime_data$Date
+year <- sapply(year1, function(x) strsplit(x, "/")[[1]][3])
+df<-data.frame(x=1, y=year)
+DT <- data.table(df)
+DT <- DT[, sum(x), by = y]
+DT <- DT[order(y)]
+library(ggplot2)
+qplot(data=DT, x=y, y=V1, xlab="Year", ylab="Incidences")
+```
+
+
+Q4: Create a table to show the frequency of all crimes over time. This data frame should have one column per crime. Be careful to handle missing values as all crimes may not occur every year. Print out the top of this data frame.
+```{r}
+crime <- crime_data$Category
+df2<-data.frame(x = crime, y = 1)
+DT2 <- data.table(df2)
+DT2 <- DT2[, sum(y), by = x]
+colnames(DT2) <- c("Crime", "Number")
+DT2 <- DT2[order(Number, decreasing=TRUE)]
+head(DT2, 10)
+```
+
+
+Q5: Compute the correlations of all crimes and report top 10 pairs of crimes that are most correlated.
+```{r}
+df3 <- data.frame(x = crime, y = year, z = 1)
+DT3 <- data.table(df3)
+DT3 <- DT3[, sum(z), by = .(x, y)]
+colnames(DT3) <- c("Crime", "Year", "Number")
+DT3 <- DT3[order(Crime, Year)]
+library(reshape2)
+DT3 <- acast(DT3, Year~Crime, value.var="Number")
+res <- cor(DT3)
+res <- round(res, 2)
+crimes <- sort(unique(crime_data$Category))
+```
+In the "res" table, I found the following crime pairs have the largest correlations:
+DRUG/NARCOTIC vs LIQUOR LAWS: 0.95
+SEX OFFENCES,FORCIBLE vs WEAPON LAWS: 0.95
+ASSAULT vs FRAUD: 0.94
+MISSING PERSON vs SUSPICIOUS OCC: 0.94
+NON-CRIMINAL vs STOLEN PROPERTY: 0.94
+EMBEZZLEMENT vs SUICIDE: 0.93
+LARCENY/THEFT vs Non-criminal: 0.93
+DRUG/NARCOTI vs PROSTITUTION: 0.92
+ASSAULT vs ARSON: 0.91
+LARCENY/THEFT vs SEX OFFENCES,FORCIBLE: 0.91
+
+
+Q6: Plot all the crimes by year to see how they evolve. Choose any plot type you think will be the best visualization of the data. Make sure this is something readable and not a mess!
+```{r  fig.width=10,fig.height=4}
+library(ggplot2)
+crime <- crime_data$Category
+year1 <- crime_data$Date
+year <- sapply(year1, function(x) strsplit(x, "/")[[1]][3])
+df2<-data.frame(x = crime, y = year, z = 1)
+DT2 <- data.table(df2)
+colnames(DT2) <- c("Category", "Year", "Number")
+data <- DT2
+data <- data[, sum(Number), by = .(Category, Year)]
+data <- data[order(Category, Year)]
+ggplot(data, aes(fill=Category, y=V1, x=Year)) +
+    geom_bar(position="dodge", stat="identity")
+```
+
+Q7: Create a pie chart of all crimes (aggregate across all years).
+```{r fig.width=10,fig.height=5}
+library(ggplot2)
+crime <- crime_data$Category
+df2<-data.frame(x = crime, y = 1)
+DT2 <- data.table(df2)
+DT2 <- DT2[, sum(y), by = x]
+total = sum(DT2$V1)
+df3 <- data.frame(DT2$x, round(DT2$V1/total,2))
+DT3 <- data.table(df3)
+colnames(DT3) <- c("Crime", "Percentage")
+ggplot(DT3, aes(x="", y=Percentage, fill=Crime))+ geom_bar(width = 1, stat = "identity") + coord_polar("y", start=0)
+```
+
+Q8: Plot the total crimes by lattitude and longitude, for all combinations of police district and crime category, using a scatter plot. Make the scatter plot interactive using the **rbokeh** package.
+```{r fig.width=10,fig.height=5}
+library(rbokeh)
+p <- gmap(lat = 37.78, lng = -122.42, zoom = 13) %>% ly_points(X, Y, data = crime_data, hover = c(Category, PdDistrict), col = 'red') %>% x_axis(visible = FALSE) %>% y_axis(visible = FALSE)
+```
+(The satallite map can be successfuly displayed after running this code block, but my PC(4GB Memory) is too slow to load it, resulting the breakdown of RStudio, thus please try the code on other devices! Also the map I generated is filled with red dots..but due to the breakdown issue, I was not able to modify the code and see if anything can change. Look forward to see the correct code!)
+
+
+Q9: Using annual counts, how much of DRUG/NARCOTIC offences can you explain using the number of LIQOUR LAWS, PROSTITUTION, and WEAPON LAWS violations?
+```{r fig.width=10,fig.height=5}
+library(data.table)
+library(ggplot2)
+crime_data = fread("~/Downloads/SFPD_Incidents_from_January_2003.csv")
+crime <- crime_data$Category
+year1 <- crime_data$Date
+year <- sapply(year1, function(x) strsplit(x, "/")[[1]][3])
+df2<-data.frame(x = crime, y = year, z = 1)
+DT2 <- data.table(df2)
+colnames(DT2) <- c("Category", "Year", "Number")
+data <- subset(DT2, Category == 'DRUG/NARCOTIC' | Category == 'LIQUOR LAWS' | Category == 'PROSTITUTION' | Category == 'WEAPON LAWS')
+data <- data[, sum(Number), by = .(Category, Year)]
+data <- data[order(Category, Year)]
+ggplot(data, aes(y=V1, x=Year, group=Category, shape=Category, colour=Category)) + geom_line() + scale_colour_hue(name="Category", l=30)  + scale_linetype_discrete(name="Category")
+```
+From the line chart above we can see that, the incidences of DRUG/NARCOTIC are much more popular the other three types of crimes. Incidences breaching WEAPON LAWS and LIQUOR LAWS seems to be parallel to each other. Also, the increases of PROSTITUTION and LIQUOR LAWS breaching seem to lead the increases of DRUG/NARCOTIC breaching, or DRUG/NARCOTIC breaching is leading or occuring together with PROSTITUTION and LIQUOR LAWS.
+
+Q10: How would you show in one picture, which crimes occur together the most?
+```{r fig.width=10,fig.height=5}
+Day <- crime_data$Date
+Time <- crime_data$Time
+Place <- crime_data$Address
+df2 <- data.frame(x = crime, y = Day, w = Time, u = Place, z = 1)
+DT2 <- data.table(df2)
+colnames(DT2) <- c("Category", "Date", "Time", "Address", "Number")
+DT2 <- DT2[, sum(Number), by = .(Date,Time,Address,Category)]
+DT2 <- DT2[order(Date,Time,Address)]
+DT3 <- subset(DT2, V1 > 1)
+```
+(It seems like this question needs Bayes Model to reach the solution, but I have too limited knowledge to get it done, I can only generate the code above. Thus look forward to the correct solution as well!)
