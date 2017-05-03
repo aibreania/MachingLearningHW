@@ -1,11 +1,3 @@
----
-title: "A Homework of Biblical Proportions"
-author: "Danning Peng"
-output: html_document
----
-
-In this HW, we will analyze the text of the bible. The ascii version resides in the file "ascii_bible.txt" on Camino. Use an editor to familiarize yourself with the structure of the file. Then perform the following operations, listed below as questions for you to answer. 
-
 ## Q1: Read in the file using any R function you like and store each verse in a text array. After which print the top 20 verses. (Remove the top two lines which contain the title.)
 ```{r}
 bible <- readLines("~/Downloads/ascii_bible.txt")
