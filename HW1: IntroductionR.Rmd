@@ -1,15 +1,3 @@
----
-title: "HW_Introduction_to_R"
-author: "Danning Peng"
-date: "April 15, 2016"
-output: html_document
----
-
-**This HW is to be done individually**. The goal is to make sure everyone in class is able to undertake basic programming in R. Do not collaborate with anyone, the honor code applies, and submissions will be checked for similarity. Submissions will be checked for completeness. 
-
-Please answer questions on the Rmd file. Make sure you can generate the entire HTML file with solutions. Upload only the HTML file with output. The submission file titles should be of the form "HW1_FirstName_LastName.html".  
-
-
 Q1: This is not really a question but an exercise. Type in "demo(grapics)" in the R console and then run through the various cases to understand how to plot different types of graphs. 
 > demo(graphics)
 
